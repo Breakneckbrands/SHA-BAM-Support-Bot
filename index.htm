@@ -100,7 +100,7 @@ Save: Click Save in the top right corner. Your Gem is now live and pinned to you
             btn.disabled = true;
             typingIndicator.style.display = 'block';
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
             
             const payload = {
                 contents: [...chatHistory, { role: "user", parts: [{ text: text }] }],
