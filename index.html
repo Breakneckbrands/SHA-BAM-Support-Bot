@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHA-BAM! Support Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --ghl-blue: #188bf6;
+            --bg-color: #f4f7f9;
+            --ai-bubble: #ffffff;
+            --user-bubble: #188bf6;
+        }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-color); margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* Header */
+        header { background: white; padding: 15px 20px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { margin: 0; font-size: 18px; color: #333; }
+        .clear-btn { background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+
+        /* Chat Window */
+        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .message { max-width: 85%; padding: 14px 18px; border-radius: 12px; line-height: 1.6; font-size: 14px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .user { align-self: flex-end; background: var(--user-bubble); color: white; border-bottom-right-radius: 2px; }
+        .ai { align-self: flex-start; background: var(--ai-bubble); color: #2c3e50; border-bottom-left-radius: 2px; }
+        
+        /* Markdown Styling */
+        .message p { margin: 0 0 10px 0; }
+        .message ul { margin: 0; padding-left: 20px; }
+        .message strong { color: inherit; }
+
+        /* Input Area */
+        #input-area { background: white; padding: 20px; display: flex; gap: 12px; border-top: 1px solid #ddd; }
+        input { flex: 1; padding: 14px; border: 1px solid #dfe3e8; border-radius: 8px; outline: none; transition: border 0.2s; }
+        input:focus { border-color: var(--ghl-blue); }
+        button#send-btn { background: var(--ghl-blue); color: white; border: none; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        button:disabled { background: #b0d4f1; cursor: not-allowed; }
+        
+        .typing { font-size: 12px; color: #637381; padding: 0 20px 10px; display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SHA-BAM! Support Pro</h1>
+        <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+    </header>
+
+    <div id="chat-container">
+        <div class="message ai">Confirming understanding: You're looking to scale with SHA-BAM! How can I help you troubleshoot, strategize, or beat the "Bloated Giants" today?</div>
+    </div>
+    
+    <div id="typing-indicator" class="typing">SHA-BAM Pro is strategizing...</div>
+
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Ask about workflows, setups, or scaling..." onkeypress="handleKey(event)">
+        <button id="send-btn" onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        // REPLACE WITH YOUR KEY (But remember to restrict the key in Google Console!)
+        const API_KEY = "AIzaSyDY4mzLpWaarXLNFOi4aG9xpIPJJ9F_xyQ";
+
+        const SYSTEM_INSTRUCTION = `
+        1. Persona
+"You are the SHA-BAM! Support Pro, an authentic, adaptive AI collaborator with a touch of wit. You are not a rigid lecturer; you are a supportive, grounded peer who balances empathy with candor. Your voice is professional yet warm—competent but never cold."
+2. Knowledge & Context
+"You are an expert on the SHA-BAM Agency Operating System. Your core narrative is 'The All-in-One Operating System' that replaces the 'Frankenstack' of disconnected tools (Salesforce, HubSpot, ClickFunnels, etc.). You understand that SHA-BAM is a white-label, managed service built on HighLevel at gohighlevel.com that offers unlimited scale (contacts/users) for a membership fee. You will never refer to any source material as anything other than SHA-BAM! help documents, or refer to any third parties directly by name. You will position any workflow or best practices as options for supporting members final business decision."
+3. Task & Functions
+"Your goal is to help users troubleshoot, strategize, and scale using SHA-BAM. When asked about competitors, use the 'Villain' archetypes (The Bloated Giants, The Feature Builders, The Specialists). When troubleshooting, focus on the 3-Step Framework: White-Label Setup → Plug In Automations → Deliver Results at Scale."
+4. Format & Response Protocol
+Quick Analysis: Start by confirming understanding of the user’s problem with personality.
+Execution: Provide technical solutions using LaTeX only for complex formulas. Use Markdown (bolding, headers) for scannability.
+Tone Check: Use measured, dry humor. Correct misinformation gently.
+Closing: Always end with a single, high-value next step (e.g., 'Would you like me to draft that automation workflow for you?').
+Step 4: Knowledge Base (The "Notebook" Component)
+This is where you bridge your NotebookLM data into the Gem:https://notebooklm.google.com/notebook/48aded67-2262-4975-8052-7595e6233605?authuser=3
+Click Add files (or the + icon).
+Upload the Sha-Bam Comparison Project and SHA-BAM Menu of tools PDFs you've provided.
+Pro Tip: If you have these in Google Drive, select the Drive option to keep them synced.
+Step 5: Preview & Save
+Preview: On the right-hand panel, send a test message like: "How do we beat HubSpot on pricing?".
+Refine: If the answer is too dry, click the Magic Wand (Pencil icon) next to your instructions to have Gemini re-write them for better "flow".
+Save: Click Save in the top right corner. Your Gem is now live and pinned to your sidebar.
+        `;
+
+        let chatHistory = [];
+
+        async function sendMessage() {
+            const inputField = document.getElementById('user-input');
+            const btn = document.getElementById('send-btn');
+            const typingIndicator = document.getElementById('typing-indicator');
+            const text = inputField.value.trim();
+
+            if (!text) return;
+
+            appendMessage('user', text);
+            inputField.value = '';
+            btn.disabled = true;
+            typingIndicator.style.display = 'block';
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;            
+            const payload = {
+                contents: [...chatHistory, { role: "user", parts: [{ text: text }] }],
+                system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                const aiResponse = data.candidates[0].content.parts[0].text;
+
+                chatHistory.push({ role: "user", parts: [{ text: text }] });
+                chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                
+                appendMessage('ai', aiResponse);
+            } catch (error) {
+                appendMessage('ai', "Error: The connection was dropped. Double-check your API key restrictions.");
+            } finally {
+                btn.disabled = false;
+                typingIndicator.style.display = 'none';
+            }
+        }
+
+        function appendMessage(role, text) {
+            const container = document.getElementById('chat-container');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}`;
+            // Use 'marked' library to render markdown
+            msgDiv.innerHTML = marked.parse(text);
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearChat() {
+            chatHistory = [];
+            document.getElementById('chat-container').innerHTML = '<div class="message ai">Chat cleared. Ready for a new strategy session!</div>';
+        }
+
+        function handleKey(e) { if (e.key === 'Enter') sendMessage(); }
+    </script>
+</body>
+</html>
